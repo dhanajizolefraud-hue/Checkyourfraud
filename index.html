@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Share Location</title>
+</head>
+<body>
+    <h2>Location Request</h2>
+    <p>Click the button below to share your current coordinates.</p>
+    
+    <button onclick="getLocation()">Share My Location</button>
+
+    <p id="display"></p>
+
+    <script>
+        const output = document.getElementById("display");
+
+        function getLocation() {
+            if (navigator.geolocation) {
+                // This triggers the browser permission popup
+                navigator.geolocation.getCurrentPosition(showPosition, showError);
+            } else {
+                output.innerHTML = "Geolocation is not supported by this browser.";
+            }
+        }
+
+        function showPosition(position) {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            
+            output.innerHTML = "Latitude: " + lat + "<br>Longitude: " + lon;
+            
+            // In a real scenario, you would add code here to send 
+            // lat and lon to your email or a database.
+            console.log("Location captured:", lat, lon);
+        }
+
+        function showError(error) {
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    output.innerHTML = "User denied the request for Geolocation."
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    output.innerHTML = "Location information is unavailable."
+                    break;
+            }
+        }
+    </script>
+</body>
+</html>
